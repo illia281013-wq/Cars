@@ -1,154 +1,117 @@
-const cars=[
-{name:"Toyota RAV4",body:"suv",budget:"mid",use:["city","family","travel"],priority:["economy","comfort"],drive:"awd",speed:"normal",price:"≈ 32 000 €",engine:"2.5 Hybrid",power:"218 л.с.",image:"https://images.unsplash.com/photo-1559416523-140ddc3d238c?auto=format&fit=crop&w=1200&q=80"},
-{name:"BMW X3",body:"suv",budget:"mid",use:["city","family","travel"],priority:["comfort","power","tech"],drive:"awd",speed:"fast",price:"≈ 48 000 €",engine:"2.0 Turbo",power:"245 л.с.",image:"https://images.unsplash.com/photo-1556189250-72ba954cfc2b?auto=format&fit=crop&w=1200&q=80"},
-{name:"Volkswagen Golf",body:"hatch",budget:"low",use:["city"],priority:["economy","tech"],drive:"fwd",speed:"normal",price:"≈ 25 000 €",engine:"1.5 TSI",power:"150 л.с.",image:"https://images.unsplash.com/photo-1504215680853-026ed2a45def?auto=format&fit=crop&w=1200&q=80"},
-{name:"Tesla Model 3",body:"sedan",budget:"mid",use:["city","travel"],priority:["tech","power","economy"],drive:"rwd",speed:"fast",price:"≈ 39 000 €",engine:"Electric",power:"283 л.с.",image:"https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&w=1200&q=80"},
-{name:"BMW 3 Series",body:"sedan",budget:"mid",use:["city","travel","fun"],priority:["power","comfort","tech"],drive:"rwd",speed:"fast",price:"≈ 43 000 €",engine:"2.0 Turbo",power:"258 л.с.",image:"https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=1200&q=80"},
-{name:"Mazda MX-5",body:"sport",budget:"mid",use:["city","fun"],priority:["power"],drive:"rwd",speed:"fast",price:"≈ 31 000 €",engine:"2.0 Skyactiv",power:"184 л.с.",image:"https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80"},
-{name:"Mercedes-Benz GLE",body:"suv",budget:"high",use:["family","travel"],priority:["comfort","tech"],drive:"awd",speed:"normal",price:"≈ 68 000 €",engine:"3.0 Turbo",power:"381 л.с.",image:"https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1200&q=80"},
-{name:"Porsche 911",body:"sport",budget:"premium",use:["fun","city"],priority:["power"],drive:"rwd",speed:"fast",price:"≈ 125 000 €",engine:"3.0 Twin-Turbo",power:"394 л.с.",image:"https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=1200&q=80"},
-{name:"Hyundai Tucson",body:"suv",budget:"low",use:["city","family","travel"],priority:["economy","comfort"],drive:"fwd",speed:"calm",price:"≈ 29 000 €",engine:"1.6 Hybrid",power:"215 л.с.",image:"https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=1200&q=80"},
-{name:"Audi A5",body:"sport",budget:"high",use:["city","fun","travel"],priority:["comfort","tech","power"],drive:"awd",speed:"fast",price:"≈ 57 000 €",engine:"2.0 TFSI",power:"265 л.с.",image:"https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=1200&q=80"},
-{name:"Skoda Octavia",body:"sedan",budget:"low",use:["city","family","travel"],priority:["economy","comfort"],drive:"fwd",speed:"calm",price:"≈ 27 000 €",engine:"1.5 TSI",power:"150 л.с.",image:"https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1200&q=80"},
-{name:"Land Rover Defender",body:"suv",budget:"high",use:["travel","family"],priority:["comfort","power"],drive:"awd",speed:"normal",price:"≈ 72 000 €",engine:"3.0 Diesel",power:"300 л.с.",image:"https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=1200&q=80"}
-];
+const KEY="memory_tool_prompts_v2";
+const API_KEY="memory_tool_api";
 
-let step=1,answers={};
-const questions=document.querySelectorAll(".question"), bar=document.getElementById("progressBar"), count=document.getElementById("stepCount"), back=document.getElementById("backBtn"), finder=document.getElementById("finder"), results=document.getElementById("results");
+function normalize(text){return String(text||"").toLowerCase().trim().replace(/\\s+/g," ")}
+function getLocal(){try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch{return[]}}
+function setLocal(items){localStorage.setItem(KEY,JSON.stringify(items.slice(0,1000)))}
+function api(){return localStorage.getItem(API_KEY)||""}
+function isSecret(text){return /(password|passwd|api[_ -]?key|secret|token|private[_ -]?key)\\s*[:=]/i.test(text)}
 
-document.querySelectorAll(".options button").forEach(btn=>btn.addEventListener("click",()=>{
- answers[btn.dataset.key]=btn.dataset.value;
- if(step<6){step++;renderStep()}else { rememberFinderPreferences(); showResults(); }
-}));
-back.onclick=()=>{if(step>1){step--;renderStep()}};
-document.getElementById("restartBtn").onclick=reset;
-document.getElementById("editBtn").onclick=()=>{results.style.display="none";finder.style.display="block";step=1;renderStep();window.scrollTo({top:0,behavior:"smooth"})};
+async function savePrompt(prompt){
+  prompt=String(prompt||"").trim();
+  if(prompt.length<3)return{ok:false,error:"Промт слишком короткий."};
+  if(isSecret(prompt))return{ok:false,error:"Похоже, в тексте есть секрет. Он не сохранён."};
 
-function renderStep(){
- questions.forEach(q=>q.classList.toggle("active",Number(q.dataset.step)===step));
- bar.style.width=(step/6*100)+"%";count.textContent=step+" / 6";back.disabled=step===1;
-}
-function score(c){
- let s=0;
- if(answers.budget==="high" && c.budget==="high")s+=25;
- if(answers.budget==="premium" && c.budget==="premium")s+=30;
- if(answers.budget==="mid" && c.budget==="mid")s+=30;
- if(answers.budget==="low" && c.budget==="low")s+=30;
- if(answers.use && c.use.includes(answers.use))s+=22;
- if(answers.body===c.body)s+=22;
- if(answers.priority && c.priority.includes(answers.priority))s+=15;
- if(answers.drive==="any"||answers.drive===c.drive)s+=10;
- if(answers.speed==="fast"&&c.speed==="fast")s+=12;
- if(answers.speed==="normal"&&c.speed!=="calm")s+=8;
- if(answers.speed==="calm"&&c.speed==="calm")s+=10;
- return Math.min(99,s);
-}
-function showResults(){
- const ranked=cars.map(c=>({...c,match:score(c)})).sort((a,b)=>b.match-a.match).slice(0,6);
- document.getElementById("resultSummary").textContent="Подбор сформирован по твоим ответам. Открой карточку, чтобы сравнить основные параметры.";
- document.getElementById("cards").innerHTML=ranked.map(c=>`<article class="card">
-<img class="car-image" src="${c.image}" alt="${c.name}" loading="lazy">
-<div class="card-body"><div class="match">${c.match}% СОВПАДЕНИЕ</div><h3>${c.name}</h3><div class="meta">${c.price} · ${c.body.toUpperCase()}</div>
-<div class="specs"><div class="spec">Двигатель<b>${c.engine}</b></div><div class="spec">Мощность<b>${c.power}</b></div><div class="spec">Привод<b>${c.drive.toUpperCase()}</b></div><div class="spec">Назначение<b>${c.use[0]}</b></div></div>
-<div class="reason">${reason(c)}</div></div></article>`).join("");
- finder.style.display="none";results.style.display="block";window.scrollTo({top:0,behavior:"smooth"});
-}
-function reason(c){
- const bits=[];
- if(c.body===answers.body)bits.push("подходит выбранный кузов");
- if(c.use.includes(answers.use))bits.push("соответствует сценарию использования");
- if(c.priority.includes(answers.priority))bits.push("есть нужный приоритет");
- if(answers.drive==="any"||c.drive===answers.drive)bits.push("совпадает предпочтение по приводу");
- return bits.length?"Почему в подборке: "+bits.join(", ")+".":"Модель получила высокий общий балл по выбранным параметрам.";
-}
-function reset(){answers={};step=1;results.style.display="none";finder.style.display="block";renderStep();window.scrollTo({top:0,behavior:"smooth"})}
-renderStep();
+  const normalized=normalize(prompt);
+  const local=getLocal();
+  const existing=local.find(x=>x.normalized_prompt===normalized);
 
-/* PROMPT MEMORY */
-const PROMPT_MEMORY_KEY = "automatch_prompt_memory_v1";
-const PROMPT_MEMORY_API = window.PROMPT_MEMORY_API || "";
-
-function promptMemoryNormalize(text) {
-  return String(text || "").toLowerCase().trim().replace(/\s+/g, " ");
-}
-
-function promptMemoryLooksReusable(text) {
-  const value = String(text || "").trim();
-  if (value.length < 12) return false;
-  return /(создай|сделай|добавь|используй|всегда|никогда|хочу|предпочитаю|мой стиль|мне нужно|промт|инструкц|сайт|режим|поведени)/i.test(value);
-}
-
-function promptMemoryGetLocal() {
-  try { return JSON.parse(localStorage.getItem(PROMPT_MEMORY_KEY) || "[]"); }
-  catch { return []; }
-}
-
-function promptMemorySetLocal(items) {
-  localStorage.setItem(PROMPT_MEMORY_KEY, JSON.stringify(items.slice(0, 200)));
-}
-
-async function promptMemorySave(prompt) {
-  if (!promptMemoryLooksReusable(prompt)) return {saved:false, reason:"not_reusable"};
-
-  const normalized = promptMemoryNormalize(prompt);
-  const items = promptMemoryGetLocal();
-  const existing = items.find(x => x.normalized_prompt === normalized);
-
-  if (existing) {
-    existing.usage_count = (existing.usage_count || 1) + 1;
-    existing.updated_at = new Date().toISOString();
-  } else {
-    items.unshift({
-      id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
-      prompt: String(prompt).trim(),
-      normalized_prompt: normalized,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      usage_count: 1
+  if(existing){
+    existing.usage_count=(existing.usage_count||1)+1;
+    existing.updated_at=new Date().toISOString();
+  }else{
+    local.unshift({
+      id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),
+      prompt,normalized_prompt:normalized,
+      created_at:new Date().toISOString(),
+      updated_at:new Date().toISOString(),
+      usage_count:1
     });
   }
+  setLocal(local);
 
-  promptMemorySetLocal(items);
-
-  if (PROMPT_MEMORY_API) {
-    try {
-      await fetch(PROMPT_MEMORY_API + "/api/prompt-memory", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
+  if(api()){
+    try{
+      const r=await fetch(api()+"/api/prompt-memory",{
+        method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({prompt})
       });
-    } catch {}
+      if(!r.ok)throw new Error();
+    }catch{document.getElementById("status").textContent="LOCAL + API OFFLINE"}
   }
-
-  return {saved:true};
+  return{ok:true};
 }
 
-async function promptMemorySearch(limit=20) {
-  if (PROMPT_MEMORY_API) {
-    try {
-      const r = await fetch(PROMPT_MEMORY_API + "/api/prompt-memory?limit=" + limit);
-      if (r.ok) return (await r.json()).prompts || [];
-    } catch {}
+async function loadPrompts(){
+  if(api()){
+    try{
+      const r=await fetch(api()+"/api/prompt-memory?limit=1000");
+      if(r.ok){
+        const data=await r.json();
+        document.getElementById("status").textContent="API MEMORY";
+        return data.prompts||[];
+      }
+    }catch{}
   }
-  return promptMemoryGetLocal().slice(0, limit);
+  document.getElementById("status").textContent="LOCAL MEMORY";
+  return getLocal();
 }
 
-window.PromptMemory = {
-  save: promptMemorySave,
-  search: promptMemorySearch,
-  getLocal: promptMemoryGetLocal,
-  clearLocal: () => localStorage.removeItem(PROMPT_MEMORY_KEY)
+async function deletePrompt(id){
+  const local=getLocal().filter(x=>String(x.id)!==String(id));
+  setLocal(local);
+  if(api()){
+    try{await fetch(api()+"/api/prompt-memory/"+encodeURIComponent(id),{method:"DELETE"})}catch{}
+  }
+}
+
+async function render(){
+  const list=document.getElementById("memoryList");
+  const query=normalize(document.getElementById("searchInput").value);
+  let items=await loadPrompts();
+  if(query)items=items.filter(x=>normalize(x.prompt).includes(query));
+  list.innerHTML=items.length?items.map(x=>`<article class="memory-item">
+    <div><div class="memory-text">${escapeHtml(x.prompt)}</div>
+    <div class="memory-meta">Использований: ${x.usage_count||1} · ${x.updated_at||x.created_at||""}</div></div>
+    <button class="delete" data-id="${escapeHtml(String(x.id))}">Удалить</button>
+  </article>`).join(""):'<p class="muted">Память пока пуста.</p>';
+  list.querySelectorAll(".delete").forEach(b=>b.onclick=async()=>{await deletePrompt(b.dataset.id);render()});
+}
+
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+document.querySelectorAll(".tab").forEach(tab=>tab.onclick=()=>{
+ document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+ document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
+ tab.classList.add("active");document.getElementById(tab.dataset.tab).classList.add("active");
+ if(tab.dataset.tab==="memory")render();
+});
+
+document.getElementById("saveBtn").onclick=async()=>{
+ const input=document.getElementById("promptInput"),msg=document.getElementById("saveMessage");
+ const result=await savePrompt(input.value);
+ msg.textContent=result.ok?"Промт сохранён.":"Ошибка: "+result.error;
+ if(result.ok){input.value="";render()}
 };
 
-const incomingPrompt = new URLSearchParams(location.search).get("prompt");
-if (incomingPrompt) promptMemorySave(incomingPrompt);
+document.getElementById("refreshBtn").onclick=render;
+document.getElementById("searchInput").oninput=render;
 
-async function rememberFinderPreferences() {
-  const parts = Object.entries(answers)
-    .filter(([,value]) => value)
-    .map(([key,value]) => key + ": " + value);
+document.getElementById("apiSaveBtn").onclick=()=>{
+ const value=document.getElementById("apiInput").value.trim().replace(/\\/$/,"");
+ if(value)localStorage.setItem(API_KEY,value);else localStorage.removeItem(API_KEY);
+ document.getElementById("status").textContent=value?"API MEMORY":"LOCAL MEMORY";
+ render();
+};
 
-  if (parts.length) {
-    await promptMemorySave("Предпочтения пользователя для выбора автомобиля: " + parts.join(", "));
-  }
-}
+document.getElementById("apiInput").value=api();
+window.PromptMemory={
+ save:savePrompt,
+ search:loadPrompts,
+ delete:deletePrompt,
+ clear:()=>{localStorage.removeItem(KEY);render()}
+};
+
+const incoming=new URLSearchParams(location.search).get("prompt");
+if(incoming)savePrompt(incoming).then(render);
+render();
