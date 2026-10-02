@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0d10">
+<title>AutoMatch — помощник по выбору автомобиля</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="./">AUTO<span>MATCH</span></a>
+  <div class="badge">AI-style подбор</div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="eyebrow">PERSONAL CAR FINDER</div>
+  <h1>Найди автомобиль,<br><span>который подходит тебе.</span></h1>
+  <p>Ответь на несколько вопросов — алгоритм сравнит автомобили по бюджету, типу кузова, назначению, приводу и характеру езды.</p>
+</section>
+
+<section class="finder" id="finder">
+  <div class="progress"><div id="progressBar"></div></div>
+  <div class="step-count" id="stepCount">1 / 6</div>
+
+  <div class="question active" data-step="1">
+    <h2>Какой бюджет?</h2>
+    <div class="options">
+      <button data-key="budget" data-value="low">до 20 000 €</button>
+      <button data-key="budget" data-value="mid">20 000–40 000 €</button>
+      <button data-key="high" data-value="high">40 000–70 000 €</button>
+      <button data-key="budget" data-value="premium">70 000 €+</button>
+    </div>
+  </div>
+
+  <div class="question" data-step="2">
+    <h2>Для чего в основном нужна машина?</h2>
+    <div class="options">
+      <button data-key="use" data-value="city">🏙️ Город</button>
+      <button data-key="use" data-value="family">👨‍👩‍👧 Семья и поездки</button>
+      <button data-key="use" data-value="travel">🏔️ Путешествия</button>
+      <button data-key="use" data-value="fun">🏁 Драйв</button>
+    </div>
+  </div>
+
+  <div class="question" data-step="3">
+    <h2>Какой кузов нравится?</h2>
+    <div class="options">
+      <button data-key="body" data-value="suv">SUV / кроссовер</button>
+      <button data-key="body" data-value="sedan">Седан</button>
+      <button data-key="body" data-value="hatch">Хэтчбек</button>
+      <button data-key="body" data-value="sport">Купе / спорт</button>
+    </div>
+  </div>
+
+  <div class="question" data-step="4">
+    <h2>Что важнее всего?</h2>
+    <div class="options">
+      <button data-key="priority" data-value="economy">💰 Экономичность</button>
+      <button data-key="priority" data-value="comfort">🛋️ Комфорт</button>
+      <button data-key="priority" data-value="power">⚡ Мощность</button>
+      <button data-key="priority" data-value="tech">✨ Технологии</button>
+    </div>
+  </div>
+
+  <div class="question" data-step="5">
+    <h2>Какой привод предпочитаешь?</h2>
+    <div class="options">
+      <button data-key="drive" data-value="fwd">Передний</button>
+      <button data-key="drive" data-value="rwd">Задний</button>
+      <button data-key="drive" data-value="awd">Полный</button>
+      <button data-key="drive" data-value="any">Неважно</button>
+    </div>
+  </div>
+
+  <div class="question" data-step="6">
+    <h2>Насколько важна высокая динамика?</h2>
+    <div class="options">
+      <button data-key="speed" data-value="calm">Не особо</button>
+      <button data-key="speed" data-value="normal">Иногда хочется быстро</button>
+      <button data-key="speed" data-value="fast">Очень важна</button>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button id="backBtn" class="secondary" disabled>← Назад</button>
+    <button id="restartBtn" class="ghost">Сбросить</button>
+  </div>
+</section>
+
+<section class="results" id="results">
+  <div class="result-head">
+    <div>
+      <div class="eyebrow">ТВОЙ РЕЗУЛЬТАТ</div>
+      <h2>Подходящие автомобили</h2>
+      <p id="resultSummary"></p>
+    </div>
+    <button id="editBtn" class="secondary">Изменить ответы</button>
+  </div>
+  <div id="cards" class="cards"></div>
+</section>
+</main>
+<footer>AutoMatch · демонстрационный подбор. Характеристики и цены ориентировочные.</footer>
+<script src="app.js"></script>
+</body>
+</html>
