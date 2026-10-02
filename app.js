@@ -18,7 +18,7 @@ const questions=document.querySelectorAll(".question"), bar=document.getElementB
 
 document.querySelectorAll(".options button").forEach(btn=>btn.addEventListener("click",()=>{
  answers[btn.dataset.key]=btn.dataset.value;
- if(step<6){step++;renderStep()}else showResults();
+ if(step<6){step++;renderStep()}else { rememberFinderPreferences(); showResults(); }
 }));
 back.onclick=()=>{if(step>1){step--;renderStep()}};
 document.getElementById("restartBtn").onclick=reset;
