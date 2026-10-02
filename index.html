@@ -10,7 +10,7 @@
 <body>
 <header class="topbar">
   <a class="brand" href="./">AUTO<span>MATCH</span></a>
-  <div class="badge">AI-style подбор</div>
+  <div class="badge">AI-style подбор · Prompt Memory</div>
 </header>
 
 <main>
@@ -100,8 +100,25 @@
   </div>
   <div id="cards" class="cards"></div>
 </section>
+
+<section class="prompt-memory-panel" id="promptMemory">
+  <div class="eyebrow">PROMPT MEMORY</div>
+  <h2>Сохранённые промты</h2>
+  <p>Повторяющиеся пользовательские инструкции сохраняются локально. При подключении API память синхронизируется с SQLite.</p>
+  <div id="promptMemoryList"></div>
+</section>
 </main>
 <footer>AutoMatch · демонстрационный подбор. Характеристики и цены ориентировочные.</footer>
 <script src="app.js"></script>
+<script>
+(async function renderPromptMemory(){
+  const list=document.getElementById("promptMemoryList");
+  if(!list || !window.PromptMemory) return;
+  const items=await window.PromptMemory.search(10);
+  list.innerHTML=items.length
+    ? items.map(x=>'<div class="memory-item"><span>'+String(x.prompt).replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))+'</span><b>'+((x.usage_count||1))+'×</b></div>').join('')
+    : '<div class="memory-empty">Пока сохранённых промтов нет.</div>';
+})();
+</script>
 </body>
 </html>
