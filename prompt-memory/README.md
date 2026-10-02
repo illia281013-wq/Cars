@@ -1,41 +1,38 @@
-# Prompt Memory Tool
+# Memory Tool v2
 
-Persistent memory layer for reusable user prompts.
+Полноценный слой памяти для повторяемых инструкций.
 
-## API
+## Возможности
+- Memory Mode ON/OFF.
+- localStorage fallback.
+- Node.js + SQLite для постоянной памяти.
+- Дедупликация и usage_count.
+- Поиск релевантных инструкций.
+- /api/prompt-memory/context возвращает готовый контекст для AI.
+- /api/prompt-memory/search и /api/health.
+- Не сохраняет строки, похожие на пароли, API-ключи и токены.
 
-### Save or update a prompt
-
-POST /api/prompt-memory
-
-```json
-{
-  "prompt": "Создавай мои сайты всегда в одном HTML-файле."
-}
-```
-
-The API normalizes prompts and prevents exact duplicates. Repeated prompts increase `usage_count`.
-
-### Read stored prompts
-
-GET /api/prompt-memory?limit=20
-
-### Delete a prompt
-
-DELETE /api/prompt-memory/:id
-
-## Run locally
-
+## Запуск
 ```bash
 cd prompt-memory
 npm install
 npm start
 ```
+API по умолчанию: порт 3000.
 
-The API defaults to port 3000.
+## Подключение
+1. Опубликуй frontend через GitHub Pages.
+2. Запусти prompt-memory на Node.js сервере.
+3. Во вкладке API вставь адрес сервера.
+4. Нажми «Проверить API».
+5. Оставь MEMORY MODE: ON.
 
-## Important
+## AI-контекст
+GET `/api/prompt-memory/context?q=твой новый запрос&limit=8`
 
-GitHub Pages only serves static files. It cannot run this SQLite/Express server itself. Deploy the `prompt-memory` folder to a Node-compatible server if persistent cross-device storage is required.
+Поле `context` можно добавить к запросу модели как дополнительный контекст.
 
-The frontend also contains a localStorage fallback, so the feature can work on a static GitHub Pages deployment without a backend.
+## Ограничение
+GitHub Pages не может перехватывать произвольные новые сообщения ChatGPT. Инструмент автоматически работает только в приложении/интеграции, которое отправляет запросы в этот API. Репозиторий не изменяет внутреннюю память модели ChatGPT.
+
+Не сохраняй пароли, токены и другие секреты.
