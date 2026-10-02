@@ -63,3 +63,92 @@ function reason(c){
 }
 function reset(){answers={};step=1;results.style.display="none";finder.style.display="block";renderStep();window.scrollTo({top:0,behavior:"smooth"})}
 renderStep();
+
+/* PROMPT MEMORY */
+const PROMPT_MEMORY_KEY = "automatch_prompt_memory_v1";
+const PROMPT_MEMORY_API = window.PROMPT_MEMORY_API || "";
+
+function promptMemoryNormalize(text) {
+  return String(text || "").toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+function promptMemoryLooksReusable(text) {
+  const value = String(text || "").trim();
+  if (value.length < 12) return false;
+  return /(создай|сделай|добавь|используй|всегда|никогда|хочу|предпочитаю|мой стиль|мне нужно|промт|инструкц|сайт|режим|поведени)/i.test(value);
+}
+
+function promptMemoryGetLocal() {
+  try { return JSON.parse(localStorage.getItem(PROMPT_MEMORY_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function promptMemorySetLocal(items) {
+  localStorage.setItem(PROMPT_MEMORY_KEY, JSON.stringify(items.slice(0, 200)));
+}
+
+async function promptMemorySave(prompt) {
+  if (!promptMemoryLooksReusable(prompt)) return {saved:false, reason:"not_reusable"};
+
+  const normalized = promptMemoryNormalize(prompt);
+  const items = promptMemoryGetLocal();
+  const existing = items.find(x => x.normalized_prompt === normalized);
+
+  if (existing) {
+    existing.usage_count = (existing.usage_count || 1) + 1;
+    existing.updated_at = new Date().toISOString();
+  } else {
+    items.unshift({
+      id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+      prompt: String(prompt).trim(),
+      normalized_prompt: normalized,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      usage_count: 1
+    });
+  }
+
+  promptMemorySetLocal(items);
+
+  if (PROMPT_MEMORY_API) {
+    try {
+      await fetch(PROMPT_MEMORY_API + "/api/prompt-memory", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({prompt})
+      });
+    } catch {}
+  }
+
+  return {saved:true};
+}
+
+async function promptMemorySearch(limit=20) {
+  if (PROMPT_MEMORY_API) {
+    try {
+      const r = await fetch(PROMPT_MEMORY_API + "/api/prompt-memory?limit=" + limit);
+      if (r.ok) return (await r.json()).prompts || [];
+    } catch {}
+  }
+  return promptMemoryGetLocal().slice(0, limit);
+}
+
+window.PromptMemory = {
+  save: promptMemorySave,
+  search: promptMemorySearch,
+  getLocal: promptMemoryGetLocal,
+  clearLocal: () => localStorage.removeItem(PROMPT_MEMORY_KEY)
+};
+
+const incomingPrompt = new URLSearchParams(location.search).get("prompt");
+if (incomingPrompt) promptMemorySave(incomingPrompt);
+
+async function rememberFinderPreferences() {
+  const parts = Object.entries(answers)
+    .filter(([,value]) => value)
+    .map(([key,value]) => key + ": " + value);
+
+  if (parts.length) {
+    await promptMemorySave("Предпочтения пользователя для выбора автомобиля: " + parts.join(", "));
+  }
+}
